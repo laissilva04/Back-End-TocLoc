@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model sports_place {
+  id           Int            @id(map: "sports_places_pkey") @default(autoincrement())
+  nome         String         @db.VarChar(255)
+  localizacao  String         @db.VarChar(255)
+  descricao    String?
+  id_admin     Int?
+  availability availability[]
+  reservation  reservation[]
+  user         user?          @relation(fields: [id_admin], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "local_esportivo_id_admin_fkey")
+}
+
+model reservation {
+  id                 Int           @id(map: "reservations_pkey") @default(autoincrement())
+  id_jogador         Int?
+  id_local_esportivo Int?
+  id_disponibilidade Int?
+  data_reserva       DateTime?     @default(now()) @db.Timestamp(6)
+  status             String        @db.VarChar(50)
+  availability       availability? @relation(fields: [id_disponibilidade], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reservations_id_disponibilidade_fkey")
+  user               user?         @relation(fields: [id_jogador], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reservations_id_jogador_fkey")
+  sports_place       sports_place? @relation(fields: [id_local_esportivo], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reservations_id_local_esportivo_fkey")
+}
+
+model availability {
+  id                 Int           @id @default(autoincrement())
+  id_local_esportivo Int?
+  data               DateTime      @db.Date
+  hora_inicio        DateTime      @db.Time(6)
+  hora_fim           DateTime      @db.Time(6)
+  sports_place       sports_place? @relation(fields: [id_local_esportivo], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reservation        reservation[]
+}
+
+model user {
+  id           Int            @id(map: "users_pkey") @default(autoincrement())
+  nome         String         @db.VarChar(255)
+  email        String         @unique(map: "users_email_key") @db.VarChar(255)
+  tipo         String         @db.VarChar(50)
+  reservation  reservation[]
+  sports_place sports_place[]
+}
+
+enum user_role {
+  visitor
+  player
+  admin
+}
